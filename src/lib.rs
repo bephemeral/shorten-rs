@@ -1,7 +1,4 @@
-use actix_web::{
-    Responder, get, post,
-    web::{self, Redirect},
-};
+use actix_web::{HttpResponse, Responder, get, post, web};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Mutex};
 
@@ -27,21 +24,31 @@ struct Link {
 #[get("/link/{id}")]
 pub async fn get_link(path: web::Path<i32>, data: web::Data<AppState>) -> impl Responder {
     let id = path.into_inner();
-    let redirects = data.redirects.lock().unwrap();
-    let link = redirects.get(&id).unwrap();
+    let Ok(redirects) = data.redirects.lock() else {
+        return HttpResponse::InternalServerError().finish();
+    };
+    let Some(link) = redirects.get(&id) else {
+        return HttpResponse::NotFound().finish();
+    };
 
-    Redirect::to(link.clone())
+    HttpResponse::Found()
+        .append_header(("Location", link.clone()))
+        .finish()
 }
 
 #[post("/create")]
-pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> web::Json<Link> {
-    let mut redirects = data.redirects.lock().unwrap();
-    let mut last_id = data.last_id.lock().unwrap();
+pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> impl Responder {
+    let Ok(mut redirects) = data.redirects.lock() else {
+        return HttpResponse::InternalServerError().finish();
+    };
+    let Ok(mut last_id) = data.last_id.lock() else {
+        return HttpResponse::InternalServerError().finish();
+    };
 
     *last_id += 1;
     redirects.insert(*last_id, link.url.clone());
 
-    web::Json(Link {
+    HttpResponse::Ok().json(Link {
         url: format!("localhost:8080/link/{}", *last_id),
     })
 }
