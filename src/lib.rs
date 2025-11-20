@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Mutex};
 
 pub struct AppState {
-    redirects: Mutex<HashMap<i32, String>>,
+    redirects: Mutex<HashMap<i32, Link>>,
     last_id: Mutex<i32>,
 }
 
@@ -32,7 +32,7 @@ pub async fn get_link(path: web::Path<i32>, data: web::Data<AppState>) -> impl R
     };
 
     HttpResponse::Found()
-        .append_header(("Location", link.clone()))
+        .append_header(("Location", link.url.as_str()))
         .finish()
 }
 
@@ -46,9 +46,9 @@ pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> im
     };
 
     *last_id += 1;
-    redirects.insert(*last_id, link.url.clone());
+    redirects.insert(*last_id, link.into_inner());
 
     HttpResponse::Ok().json(Link {
-        url: format!("localhost:8080/link/{}", *last_id),
+        url: format!("http://localhost:8080/link/{}", *last_id),
     })
 }
