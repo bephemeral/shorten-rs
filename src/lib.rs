@@ -1,17 +1,18 @@
 use actix_web::{HttpResponse, Responder, get, post, web};
+use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct AppState {
-    redirects: Mutex<HashMap<i32, Link>>,
-    last_id: Mutex<i32>,
+    redirects: DashMap<usize, Link>,
+    last_id: AtomicUsize,
 }
 
 impl AppState {
     pub fn new() -> AppState {
         AppState {
-            redirects: Mutex::new(HashMap::new()),
-            last_id: Mutex::new(0),
+            redirects: DashMap::new(),
+            last_id: AtomicUsize::new(0),
         }
     }
 }
@@ -22,12 +23,8 @@ struct Link {
 }
 
 #[get("/link/{id}")]
-pub async fn get_link(path: web::Path<i32>, data: web::Data<AppState>) -> impl Responder {
-    let id = path.into_inner();
-    let Ok(redirects) = data.redirects.lock() else {
-        return HttpResponse::InternalServerError().finish();
-    };
-    let Some(link) = redirects.get(&id) else {
+pub async fn get_link(path: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {
+    let Some(link) = data.redirects.get(&path.into_inner()) else {
         return HttpResponse::NotFound().finish();
     };
 
@@ -38,17 +35,10 @@ pub async fn get_link(path: web::Path<i32>, data: web::Data<AppState>) -> impl R
 
 #[post("/create")]
 pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> impl Responder {
-    let Ok(mut redirects) = data.redirects.lock() else {
-        return HttpResponse::InternalServerError().finish();
-    };
-    let Ok(mut last_id) = data.last_id.lock() else {
-        return HttpResponse::InternalServerError().finish();
-    };
-
-    *last_id += 1;
-    redirects.insert(*last_id, link.into_inner());
+    let current_id = data.last_id.fetch_add(1, Ordering::SeqCst);
+    data.redirects.insert(current_id, link.into_inner());
 
     HttpResponse::Ok().json(Link {
-        url: format!("http://localhost:8080/link/{}", *last_id),
+        url: format!("http://localhost:8080/link/{}", current_id),
     })
 }
