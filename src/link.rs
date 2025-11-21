@@ -1,6 +1,6 @@
 use crate::state::AppState;
 use actix_web::{HttpResponse, Responder, get, post, web};
-use random_str::get_string;
+use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -21,7 +21,7 @@ impl Link {
 }
 
 fn get_unique_id(data: &web::Data<AppState>) -> String {
-    let id = get_string(8, true, true, true, false);
+    let id = Alphanumeric.sample_string(&mut rand::rng(), 8);
 
     if data.redirects.contains_key(&id) {
         get_unique_id(data)
