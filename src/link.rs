@@ -1,7 +1,7 @@
 use crate::state::AppState;
 use actix_web::{HttpResponse, Responder, get, post, web};
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::Ordering;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct Link {
@@ -20,9 +20,12 @@ impl Link {
     }
 }
 
-#[get("/link/{id}")]
-pub async fn get_link(path: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {
-    let Some(link) = data.redirects.get(&path.into_inner()) else {
+#[get("/{id}")]
+pub async fn get_link(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
+    let Ok(id) = Uuid::parse_str(path.into_inner().as_str()) else {
+        return HttpResponse::BadRequest().finish();
+    };
+    let Some(link) = data.redirects.get(&id) else {
         return HttpResponse::NotFound().finish();
     };
 
@@ -33,10 +36,9 @@ pub async fn get_link(path: web::Path<usize>, data: web::Data<AppState>) -> impl
 
 #[post("/create")]
 pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> impl Responder {
-    let current_id = data.last_id.fetch_add(1, Ordering::SeqCst);
-    data.redirects.insert(current_id, link.into_inner());
+    let id = Uuid::now_v7();
 
-    HttpResponse::Ok().json(Link::new(
-        format!("http://localhost:8080/link/{}", current_id).as_str(),
-    ))
+    data.redirects.insert(id, link.into_inner());
+
+    HttpResponse::Ok().json(id)
 }
