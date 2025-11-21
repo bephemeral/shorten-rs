@@ -1,9 +1,8 @@
 use crate::link::Link;
 use dashmap::DashMap;
-use uuid::Uuid;
 
 pub struct AppState {
-    pub redirects: DashMap<Uuid, Link>,
+    pub redirects: DashMap<String, Link>,
 }
 
 impl AppState {
