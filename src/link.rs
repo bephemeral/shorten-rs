@@ -1,7 +1,24 @@
+use crate::state::AppState;
 use actix_web::{HttpResponse, Responder, get, post, web};
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::Ordering;
 
-use crate::{models::link::Link, state::AppState};
+#[derive(Serialize, Deserialize)]
+pub struct Link {
+    url: String,
+}
+
+impl Link {
+    pub fn new(url: &str) -> Link {
+        Link {
+            url: String::from(url),
+        }
+    }
+
+    pub fn url(&self) -> &str {
+        self.url.as_str()
+    }
+}
 
 #[get("/link/{id}")]
 pub async fn get_link(path: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {

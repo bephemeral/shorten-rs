@@ -1,4 +1,4 @@
-use crate::models::link::Link;
+use crate::link::Link;
 use dashmap::DashMap;
 use std::sync::atomic::AtomicUsize;
 
