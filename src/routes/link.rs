@@ -1,7 +1,7 @@
 use actix_web::{HttpResponse, Responder, get, post, web};
 use std::sync::atomic::Ordering;
 
-use crate::{AppState, models::link::Link};
+use crate::{models::link::Link, state::AppState};
 
 #[get("/link/{id}")]
 pub async fn get_link(path: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {

@@ -1,7 +1,7 @@
 use actix_web::{App, HttpServer, web};
 use shorten_rs::{
-    AppState,
     routes::link::{create_link, get_link},
+    state::AppState,
 };
 
 #[actix_web::main]
