@@ -1,9 +1,11 @@
+pub mod models;
 pub mod routes;
 
 use std::sync::atomic::AtomicUsize;
 
 use dashmap::DashMap;
-use serde::{Deserialize, Serialize};
+
+use crate::models::link::Link;
 
 pub struct AppState {
     redirects: DashMap<usize, Link>,
@@ -17,9 +19,4 @@ impl AppState {
             last_id: AtomicUsize::new(0),
         }
     }
-}
-
-#[derive(Serialize, Deserialize)]
-struct Link {
-    url: String,
 }

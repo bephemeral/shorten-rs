@@ -1,7 +1,7 @@
 use actix_web::{HttpResponse, Responder, get, post, web};
 use std::sync::atomic::Ordering;
 
-use crate::{AppState, Link};
+use crate::{AppState, models::link::Link};
 
 #[get("/link/{id}")]
 pub async fn get_link(path: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {
@@ -10,7 +10,7 @@ pub async fn get_link(path: web::Path<usize>, data: web::Data<AppState>) -> impl
     };
 
     HttpResponse::Found()
-        .append_header(("Location", link.url.as_str()))
+        .append_header(("Location", link.url()))
         .finish()
 }
 
@@ -19,7 +19,7 @@ pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> im
     let current_id = data.last_id.fetch_add(1, Ordering::SeqCst);
     data.redirects.insert(current_id, link.into_inner());
 
-    HttpResponse::Ok().json(Link {
-        url: format!("http://localhost:8080/link/{}", current_id),
-    })
+    HttpResponse::Ok().json(Link::new(
+        format!("http://localhost:8080/link/{}", current_id).as_str(),
+    ))
 }
