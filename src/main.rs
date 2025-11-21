@@ -1,5 +1,8 @@
 use actix_web::{App, HttpServer, web};
-use shorten_rs::{AppState, create_link, get_link};
+use shorten_rs::{
+    routes::link::{create_link, get_link},
+    state::AppState,
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
