@@ -1,7 +1,7 @@
 use crate::state::AppState;
 use actix_web::{HttpResponse, Responder, get, post, web};
+use random_str::get_string;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct Link {
@@ -20,12 +20,19 @@ impl Link {
     }
 }
 
+fn get_unique_id(data: &web::Data<AppState>) -> String {
+    let id = get_string(8, true, true, true, false);
+
+    if data.redirects.contains_key(&id) {
+        get_unique_id(data)
+    } else {
+        id
+    }
+}
+
 #[get("/{id}")]
 pub async fn get_link(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
-    let Ok(id) = Uuid::parse_str(path.into_inner().as_str()) else {
-        return HttpResponse::BadRequest().finish();
-    };
-    let Some(link) = data.redirects.get(&id) else {
+    let Some(link) = data.redirects.get(&path.into_inner()) else {
         return HttpResponse::NotFound().finish();
     };
 
@@ -36,9 +43,9 @@ pub async fn get_link(path: web::Path<String>, data: web::Data<AppState>) -> imp
 
 #[post("/create")]
 pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> impl Responder {
-    let id = Uuid::now_v7();
+    let id = get_unique_id(&data);
 
-    data.redirects.insert(id, link.into_inner());
+    data.redirects.insert(id.clone(), link.into_inner());
 
     HttpResponse::Ok().json(id)
 }
