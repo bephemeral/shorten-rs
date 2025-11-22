@@ -21,7 +21,7 @@ impl Link {
 }
 
 fn get_unique_id(data: &web::Data<AppState>) -> String {
-    let id = Alphanumeric.sample_string(&mut rand::rng(), 8);
+    let id = Alphanumeric.sample_string(&mut rand::rng(), 4);
 
     if data.redirects.contains_key(&id) {
         get_unique_id(data)
