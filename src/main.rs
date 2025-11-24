@@ -1,6 +1,6 @@
 use actix_web::web::{self, ServiceConfig};
 use shorten_rs::{
-    link::{create_link, get_link},
+    routes::{create_link, get_link},
     state::AppState,
 };
 use shuttle_actix_web::ShuttleActixWeb;
