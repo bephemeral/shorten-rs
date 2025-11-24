@@ -14,13 +14,19 @@ struct LinkPayload {
 }
 
 impl Link {
-    pub fn new(url: &str) -> Result<Link, ParseError> {
+    pub fn new(url: &str) -> Result<Link, ()> {
         let link = match Url::parse(url) {
-            Ok(_) => url.to_string(),
-            Err(ParseError::RelativeUrlWithoutBase) => format!("http://{}", url),
-            Err(e) => {
-                return Err(e);
+            Ok(parsed) => {
+                // allow only http and https
+                match parsed.scheme() {
+                    "http" | "https" => parsed.into(),
+                    _ => return Err(()), // not really accurate but close enough
+                }
             }
+            Err(ParseError::RelativeUrlWithoutBase) => {
+                format!("http://{}", url)
+            }
+            Err(e) => return Err(()),
         };
 
         Ok(Link { url: link })
