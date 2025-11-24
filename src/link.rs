@@ -2,17 +2,28 @@ use crate::state::AppState;
 use actix_web::{HttpResponse, Responder, get, post, web};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
+use url::{ParseError, Url};
 
-#[derive(Serialize, Deserialize)]
 pub struct Link {
     url: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct LinkPayload {
+    url: String,
+}
+
 impl Link {
-    pub fn new(url: &str) -> Link {
-        Link {
-            url: String::from(url),
-        }
+    pub fn new(url: &str) -> Result<Link, ParseError> {
+        let link = match Url::parse(url) {
+            Ok(_) => url.to_string(),
+            Err(ParseError::RelativeUrlWithoutBase) => format!("http://{}", url),
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        Ok(Link { url: link })
     }
 
     pub fn url(&self) -> &str {
@@ -42,10 +53,18 @@ pub async fn get_link(path: web::Path<String>, data: web::Data<AppState>) -> imp
 }
 
 #[post("/create")]
-pub async fn create_link(link: web::Json<Link>, data: web::Data<AppState>) -> impl Responder {
+pub async fn create_link(
+    payload: web::Json<LinkPayload>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let link = match Link::new(&payload.url) {
+        Ok(l) => l,
+        Err(_) => return HttpResponse::BadRequest().body("Invalid URL"),
+    };
+
     let id = get_unique_id(&data);
 
-    data.redirects.insert(id.clone(), link.into_inner());
+    data.redirects.insert(id.clone(), link);
 
     HttpResponse::Ok().json(id)
 }
