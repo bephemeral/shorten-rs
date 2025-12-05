@@ -17,7 +17,7 @@ impl Link {
             Err(ParseError::RelativeUrlWithoutBase) => {
                 format!("http://{}", url)
             }
-            Err(e) => return Err(()),
+            Err(_) => return Err(()),
         };
 
         Ok(Link { url: link })
