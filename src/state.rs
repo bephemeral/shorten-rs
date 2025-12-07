@@ -1,14 +1,11 @@
-use crate::link::Link;
-use dashmap::DashMap;
+use sqlx::PgPool;
 
 pub struct AppState {
-    pub redirects: DashMap<String, Link>,
+    pub pool: PgPool,
 }
 
 impl AppState {
-    pub fn new() -> AppState {
-        AppState {
-            redirects: DashMap::new(),
-        }
+    pub fn new(pool: PgPool) -> AppState {
+        AppState { pool }
     }
 }

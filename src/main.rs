@@ -4,11 +4,20 @@ use shorten_rs::{
     state::AppState,
 };
 use shuttle_actix_web::ShuttleActixWeb;
+use shuttle_runtime::CustomError;
+use sqlx::{Executor, PgPool};
 
 #[shuttle_runtime::main]
-async fn main() -> ShuttleActixWeb<impl FnOnce(&mut ServiceConfig) + Send + Clone + 'static> {
+async fn main(
+    #[shuttle_shared_db::Postgres] pool: PgPool,
+) -> ShuttleActixWeb<impl FnOnce(&mut ServiceConfig) + Send + Clone + 'static> {
+    // run migrations
+    pool.execute(include_str!("../schema.sql"))
+        .await
+        .map_err(CustomError::new)?;
+
     // Note: web::Data created _outside_ HttpServer::new closure
-    let state = web::Data::new(AppState::new());
+    let state = web::Data::new(AppState::new(pool));
 
     let config = move |cfg: &mut ServiceConfig| {
         cfg.app_data(state.clone())
