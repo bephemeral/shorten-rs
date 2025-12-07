@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS links {
+    id CHAR(4) PRIMARY KEY,
+    url TEXT NOT NULL
+};
