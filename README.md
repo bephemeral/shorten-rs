@@ -8,10 +8,10 @@ A simple link shortener written in Rust with Actix Web
 - /{id} route for accessing shortened links
 - 4 character random alphanumeric IDs
 - Performant code written in Actix Web
-
-### (maybe) Coming soon
-
 - Database integration for persistently storing links
+
+### Coming soon
+
 - Frontend
 
 Please open a pull request if you are willing to help implement these changes or others
